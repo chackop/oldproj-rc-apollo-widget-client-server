@@ -21,8 +21,11 @@ const cache = new InMemoryCache();
 
 const clientStateLink = withClientState({
   cache,
-  defaults: 
-})
+  defaults: {
+    toolName: "Widget Tool",
+  },
+  resolvers: {},
+});
 
 const httpLink = new HttpLink({
   uri: `http://localhost:${GRAPHQL_PORT}/graphql`,
@@ -38,7 +41,8 @@ const link = split(
     return kind === "OperationDefinition" && operation === "subscription";
   },
   webSocketLink,
-  httpLink
+  ApolloLink.from([clientStateLink, httpLink])
+  // httpLink
 );
 
 const client = new ApolloClient({
