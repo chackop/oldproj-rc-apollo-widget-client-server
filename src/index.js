@@ -12,19 +12,50 @@ import { WebSocketLink } from "apollo-link-ws";
 import { getMainDefinition } from "apollo-utilities";
 
 import { withClientState } from "apollo-link-state";
+import gql from "graphql-tag";
 
 import "./index.css";
+import _ from "lodash";
 
 const GRAPHQL_PORT = process.env.REACT_APP_GRAPHQL_PORT || 3010;
 
 const cache = new InMemoryCache();
 
+const updateSelectedWidgetIds = (selectedWidgetIdsFn) => (
+  _,
+  { widgetId },
+  { cache }
+) => {
+  const SELECTED_WIDGET_IDS_QUERY = gql`
+    query SelectedWidgetIdsQuery {
+      selectedWidgetIds
+    }
+  `;
+
+  const data = cache.readQuery({ query: SELECTED_WIDGET_IDS_QUERY });
+  const newData = {
+    ...data,
+    selectedWidgetIds: selectedWidgetIdsFn(data.selectedWidgetIDs, widgetId),
+  };
+  cache.writeQuery({ query: SELECTED_WIDGET_IDS_QUERY, data: newData });
+};
+
 const clientStateLink = withClientState({
   cache,
   defaults: {
     toolName: "Widget Tool",
+    selectedWidgetIds: [],
   },
-  resolvers: {},
+  resolvers: {
+    Mutation: {
+      addSelectedWidgetId: updateSelectedWidgetIds((widgetIds, widgetId) =>
+        widgetIds.concat(widgetId)
+      ),
+      removeSelectedWidgetId: updateSelectedWidgetIds((widgetIds, widgetId) =>
+        widgetIds.filter((wId) => wId !== widgetId)
+      ),
+    },
+  },
 });
 
 const httpLink = new HttpLink({

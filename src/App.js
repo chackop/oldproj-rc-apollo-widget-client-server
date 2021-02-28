@@ -2,27 +2,13 @@ import * as React from "react";
 import { Query, Mutation } from "react-apollo";
 import gql from "graphql-tag";
 
-import {
-  ToolHeader,
-  WidgetTable,
-  WidgetForm,
-  SubscriptionInfoNotification,
-} from "./components";
+import { ToolHeader, WidgetTable, WidgetForm } from "./components";
 
-const APP_QUERY = gql`
-  query App {
-    toolName @client
-    widgets {
-      id
-      name
-      description
-      color
-      size
-      price
-      quantity
-    }
-  }
-`;
+import {
+  WidgetInsertedSubscription,
+  WidgetDeletedSubscription,
+} from "./subscriptions";
+import { WIDGETS_QUERY } from "./queries";
 
 const INSERT_WIDGET_MUTATION = gql`
   mutation InsertWidget($widget: InsertWidget) {
@@ -52,47 +38,13 @@ const DELETE_WIDGET_MUTATION = gql`
   }
 `;
 
-const WIDGET_INSERTED_SUBSCRIPTION = gql`
-  subscription WidgetInserted {
-    widgetInserted {
-      id
-      name
-    }
-  }
-`;
-
-const WIDGET_DELETED_SUBSCRIPTION = gql`
-  subscription WidgetDeleted {
-    widgetDeleted {
-      id
-      name
-    }
-  }
-`;
-
 export class App extends React.Component {
   render() {
     return (
       <React.Fragment>
-        <section id="notifications">
-          <SubscriptionInfoNotification
-            subscription={WIDGET_INSERTED_SUBSCRIPTION}
-            refetchQueries={[{ query: APP_QUERY }]}
-          >
-            {({ widgetInserted: { name } }) => (
-              <span>A widget named {name} was inserted!</span>
-            )}
-          </SubscriptionInfoNotification>
-          <SubscriptionInfoNotification
-            subscription={WIDGET_DELETED_SUBSCRIPTION}
-            refetchQueries={[{ query: APP_QUERY }]}
-          >
-            {({ widgetDeleted: { name } }) => (
-              <span>A widget named {name} was deleted!</span>
-            )}
-          </SubscriptionInfoNotification>
-        </section>
-        <Query query={APP_QUERY}>
+        <WidgetInsertedSubscription />
+        <WidgetDeletedSubscription />
+        <Query query={WIDGETS_QUERY}>
           {({ loading, error, data }) => {
             if (loading) return "Loading...";
             if (error) return "Error...";
@@ -103,7 +55,7 @@ export class App extends React.Component {
                   const deleteWidget = (widgetId) => {
                     return mutateDeleteWidget({
                       variables: { widgetId },
-                      refetchQueries: () => [{ query: APP_QUERY }],
+                      refetchQueries: () => [{ query: WIDGETS_QUERY }],
                     });
                   };
 
@@ -126,7 +78,7 @@ export class App extends React.Component {
             const insertWidget = (widget) => {
               return mutateInsertWidget({
                 variables: { widget },
-                refetchQueries: () => [{ query: APP_QUERY }],
+                refetchQueries: () => [{ query: WIDGETS_QUERY }],
               });
             };
 
